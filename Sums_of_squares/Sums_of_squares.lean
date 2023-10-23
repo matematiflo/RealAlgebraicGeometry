@@ -49,6 +49,19 @@ example : sum_of_squares ([1, -2, 3] ++ (0 :: [1, -2, 3])) = 28 := rfl
 /-!
 ## Computations
 
+For greater efficiency in computations, we can also give a tail-recursive definition. Note that this is closer to how a human would compute it.
+-/
+
+def sum_of_squares_aux {R : Type} [Semiring R] (SoFar : R) : List R → R
+  | [] => SoFar
+  | (a :: l) => sum_of_squares_aux (SoFar + a ^ 2) l
+
+def sum_of_squares_TR {R : Type} [Semiring R] : List R → R
+  | L => sum_of_squares_aux 0 L
+
+#eval sum_of_squares_TR [1, -2, 3]
+
+/-!
 `sum_of_squares L` can also be computed by squaring the members of the list and summing the resulting list.
 -/
 
@@ -59,6 +72,12 @@ theorem squaring_and_summing {R : Type} [Semiring R]
       | nil => rfl -- case when L is the empty list, the two terms are definitionally equal
       | cons a l ih => simp [sum_of_squares, ih] -- case when L = (a :: l), the two terms reduce to equal ones after some simplifications
       done
+
+/-!
+This is also computable.
+-/
+
+#eval (List.map (. ^ 2) [1, -2, 3]).sum
 
 /-!
 The next result formalizes a property that one would like to denote by `(c • L).sum = c * L.sum`, meaning that the sum of the list ontained by multiplying each member of `L` by `c` is equal to `c` times the sum of `L`.
