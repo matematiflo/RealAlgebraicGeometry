@@ -49,12 +49,26 @@ example : sum_of_squares ([1, -2, 3] ++ (0 :: [1, -2, 3])) = 28 := rfl
 /-!
 ## Computations
 
-For greater efficiency in computations, we can also give a tail-recursive definition. Note that this is closer to how a human would compute it.
+For greater efficiency in computations, we can also give a tail-recursive definition. 
+
+We start with the definition of an auxiliary function. Note that this is closer to how a human would compute a finite sum (of squares).
 -/
 
 def sum_of_squares_aux {R : Type} [Semiring R] (SoFar : R) : List R → R
   | [] => SoFar
   | (a :: l) => sum_of_squares_aux (SoFar + a ^ 2) l
+
+/-!
+Alternative syntax for the auxiliary function
+-/
+
+def sum_of_squares_aux2 {R : Type} [Semiring R] : R → List R → R
+  | SoFar, [] => SoFar
+  | SoFar, (a :: l) => sum_of_squares_aux (SoFar + a ^ 2) l
+
+/-!
+The tail-recursive version of the `sum_of_squares` function.
+-/
 
 def sum_of_squares_TR {R : Type} [Semiring R] : List R → R
   | L => sum_of_squares_aux 0 L
