@@ -1,8 +1,8 @@
 /-
 # Sums of squares
 
-Copyright (c) 2023 Matematiflo. All rights reserved.  
-Released under Apache 2.0 license as described in the file LICENSE.  
+Copyright (c) 2023 Matematiflo. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Florent Schaffhauser
 -/
 
@@ -25,7 +25,7 @@ For some results, we specialize to rings or fields.
 
 ## Definition and examples
 
-Sums of squares are defined inductively, on terms of type `List R` where `R` is a semiring (recall that lists are defined inductively themselves: a list `L` is either empty or of the form `a :: l`, where `l` is an already defined list). 
+Sums of squares are defined inductively, on terms of type `List R` where `R` is a semiring (recall that lists are defined inductively themselves: a list `L` is either empty or of the form `a :: l`, where `l` is an already defined list).
 -/
 
 def sum_of_squares {R : Type} [Semiring R] : List R → R
@@ -49,25 +49,17 @@ example : sum_of_squares ([1, -2, 3] ++ (0 :: [1, -2, 3])) = 28 := rfl
 /-!
 ## Computations
 
-For greater efficiency in computations, we can also give a tail-recursive definition. 
+For greater efficiency in computations, we can also give a tail-recursive definition.
 
-We start with the definition of an auxiliary function. Note that this is closer to how a human would compute a finite sum (of squares).
+We start with the definition of an auxiliary function.
 -/
 
-def sum_of_squares_aux {R : Type} [Semiring R] (SoFar : R) : List R → R
-  | [] => SoFar
-  | (a :: l) => sum_of_squares_aux (SoFar + a ^ 2) l
-
-/-!
-Alternative syntax for the auxiliary function
--/
-
-def sum_of_squares_aux2 {R : Type} [Semiring R] : R → List R → R
+def sum_of_squares_aux {R : Type} [Semiring R] : R → List R → R
   | SoFar, [] => SoFar
   | SoFar, (a :: l) => sum_of_squares_aux (SoFar + a ^ 2) l
 
 /-!
-The tail-recursive version of the `sum_of_squares` function.
+The tail-recursive version of the `sum_of_squares` function is then defined as follows.
 -/
 
 def sum_of_squares_TR {R : Type} [Semiring R] : List R → R
@@ -75,11 +67,38 @@ def sum_of_squares_TR {R : Type} [Semiring R] : List R → R
 
 #eval sum_of_squares_TR [1, -2, 3]
 
+theorem sum_sq_aux_SumSqList {R : Type} [Semiring R] (L1 L2: List R) :
+sum_of_squares_aux (sum_of_squares L1) L2  = sum_of_squares L1 + sum_of_squares_aux 0 L2
+  := by
+    induction L2 generalizing L1 with
+    | nil => simp [sum_of_squares_aux]
+    | cons a l2 ih =>
+    simp [sum_of_squares_aux, add_comm _ (a ^2)]
+    rw [← sum_of_squares]
+    simp [ih]
+    simp [sum_of_squares, add_comm (a ^ 2) _, add_assoc]
+    simp [add_comm _ (a ^ 2)]
+    have aux := ih [a]
+    simp [sum_of_squares] at aux
+    rw [aux]
+    done
+
+theorem TR_def_ok {R : Type} [Semiring R] (L : List R) : sum_of_squares L = sum_of_squares_TR L
+  := by
+    induction L with
+    | nil => simp [sum_of_squares, sum_of_squares_TR, sum_of_squares_aux]
+    | cons a l ih =>
+    simp [sum_of_squares, ih, sum_of_squares_TR, sum_of_squares_aux]
+    have aux := sum_sq_aux_SumSqList [a] l
+    simp [sum_of_squares] at aux
+    exact aux.symm
+    done
+
 /-!
 `sum_of_squares L` can also be computed by squaring the members of the list and summing the resulting list.
 -/
 
-theorem squaring_and_summing {R : Type} [Semiring R] 
+theorem squaring_and_summing {R : Type} [Semiring R]
   (L : List R) : (L.map (. ^ 2)).sum = sum_of_squares L
     := by
       induction L with -- we prove the result by induction on the list L (the list type is an inductive type)
@@ -109,18 +128,18 @@ theorem mul_sum {R : Type} [Semiring R] (L : List R) (c : R) : List.sum (List.ma
     done
 
 /-!
-Combining `squaring_and_summing` and `mul_sum`, we can prove the following property, which says that `sum_of_squares (c • L) = c ^ 2 * sum_of_squares L`. 
+Combining `squaring_and_summing` and `mul_sum`, we can prove the following property, which says that `sum_of_squares (c • L) = c ^ 2 * sum_of_squares L`.
 
 This will be proven again in the section on [Multiplicative properties](#multiplicative-properties). There, we will present a proof by induction, more similar to the proof of `mul_sum` above.
 
 Note that for this result we assume that `R` is a *commutative* semiring (so that we can use [`mul_pow`]()).
 -/
 
-theorem mul_sum_sq {R : Type} [CommSemiring R] (L : List R) (c : R) : 
+theorem mul_sum_sq {R : Type} [CommSemiring R] (L : List R) (c : R) :
 sum_of_squares (L.map (c * .)) = c ^ 2 * sum_of_squares L
   := by
     simp [← squaring_and_summing, ← mul_sum] -- we reduce the statement to an equality between two sums of lists
-    have aux : ((fun x => x ^ 2) ∘ fun x => c * x) = ((fun x => c ^ 2 * x) ∘ fun x => x ^ 2) 
+    have aux : ((fun x => x ^ 2) ∘ fun x => c * x) = ((fun x => c ^ 2 * x) ∘ fun x => x ^ 2)
       := by simp [Function.funext_iff, mul_pow] -- we prove an auxiliary result that implies that the two lists are in fact equal
     rw [aux] -- by incorporating `aux`, the result is proved: the sums of two equal lists are equal
     done
@@ -133,8 +152,8 @@ The sum of squares of the list `L1 ++ L2` is equal to the sum of squares of `L1`
 > `sum_of_squares (L1 ++ L2) = sum_of_squares L1 + sum_of_squares L2`
 -/
 
-theorem sum_of_squares_concat {R : Type} [Semiring R] 
-  (L1 L2 : List R) : sum_of_squares (L1 ++ L2) = sum_of_squares L1 + sum_of_squares L2 
+theorem sum_of_squares_concat {R : Type} [Semiring R]
+  (L1 L2 : List R) : sum_of_squares (L1 ++ L2) = sum_of_squares L1 + sum_of_squares L2
     := by
       induction L1 with -- we prove the result by induction on the list L1
       | nil => -- case when L1 is the empty list
@@ -153,8 +172,8 @@ A sum of squares is invariant under permutations:
 > `L1 ~ L2 → sum_of_squares L1 = sum_of_squares L2`.
 -/
 
-theorem sum_of_squares_permut {R : Type} [Semiring R] {L1 L2 : List R} 
-  (H : L1 ~ L2) : sum_of_squares L1 = sum_of_squares L2 
+theorem sum_of_squares_permut {R : Type} [Semiring R] {L1 L2 : List R}
+  (H : L1 ~ L2) : sum_of_squares L1 = sum_of_squares L2
     := by
       induction H -- we prove the result by induction on ~ (recall that the permutation type is an inductive type: L2 is a permutation of L1 if and only if one of four cases occurs)
       · case nil => -- case when L1 L2 are both empty
@@ -177,8 +196,8 @@ If a term `a : R` is a member of a list `L : List R`, then we can compute `sum_o
 In order to be able to use the function `List.erase`, we assume that the semiring `R` has decidable equality. Recall that `L.erase a` can be used as notation for `List.erase L a`.
 -/
 
-theorem sum_of_squares_erase {R : Type} [Semiring R] [DecidableEq R] 
-  (L : List R) (a : R) (h : a ∈ L) : sum_of_squares L = a ^ 2 + sum_of_squares (L.erase a) 
+theorem sum_of_squares_erase {R : Type} [Semiring R] [DecidableEq R]
+  (L : List R) (a : R) (h : a ∈ L) : sum_of_squares L = a ^ 2 + sum_of_squares (L.erase a)
     := by
       change sum_of_squares L = sum_of_squares (a :: (L.erase a)) -- we can replace the goal with a *definitionally equal* one
       have H : L ~ (a :: (L.erase a)) := L.perm_cons_erase h -- this is the Mathlib proof that L ~ (a :: (L.erase a))
@@ -195,26 +214,26 @@ In order to be able to apply lemmas such as `mul_pow` in the proof, we assume he
 We take a look at a few examples first.
 -/
 
-#eval sum_of_squares [2 * 1, 2 * ( -2), 2 * 3] -- 56 
+#eval sum_of_squares [2 * 1, 2 * ( -2), 2 * 3] -- 56
 #eval 4 * sum_of_squares [1, -2, 3] -- 56
 
 example : sum_of_squares [2 * 1, 2 * ( -2), 2 * 3] = 4 * sum_of_squares [1, -2, 3] := rfl
 
 example (a x y : ℚ) : sum_of_squares [a * x, a * y] = a ^ 2 * sum_of_squares [x, y]
   := by simp [sum_of_squares, mul_pow, mul_add]
-    
-theorem sum_of_squares_of_list_mul {R : Type} [CommSemiring R] 
-  (L : List R) (c : R) : sum_of_squares (L.map (c * .)) = c ^ 2 * sum_of_squares L 
+
+theorem sum_of_squares_of_list_mul {R : Type} [CommSemiring R]
+  (L : List R) (c : R) : sum_of_squares (L.map (c * .)) = c ^ 2 * sum_of_squares L
     := by
       induction L with -- again an induction on L
       | nil => simp [sum_of_squares] -- the case of the empty list is trivial
       | cons a _ ih => simp [sum_of_squares, ih, mul_add, mul_pow] -- the case of a list of the form (a :: l) follows from simplifications and the use of the induction hypothesis
       done
 
-theorem sum_of_squares_of_list_div {F : Type} [Semifield F] 
-  (L : List F) (c : F) : sum_of_squares (L.map (. / c)) = (1 / c ^ 2) * sum_of_squares L 
+theorem sum_of_squares_of_list_div {F : Type} [Semifield F]
+  (L : List F) (c : F) : sum_of_squares (L.map (. / c)) = (1 / c ^ 2) * sum_of_squares L
     := by -- this will be an application of sum_of_squares_of_list_mul, using the fact that . / c = . * c⁻¹
-      have aux : (fun x => x / c) = (fun x => c⁻¹ * x) 
+      have aux : (fun x => x / c) = (fun x => c⁻¹ * x)
         := by field_simp
       simp [aux, sum_of_squares_of_list_mul] -- If we had added `sum_of_squares_of_list_mul` to `simp`, we would not need to include it here (see also the golfed version below)
       done
@@ -235,20 +254,20 @@ Let us give basic examples of sums of squares in a semiring `R`.
 We first prove that `0` and `1` are sums of squares in `R`. More generally, if `x : R`, then `x ^ 2` is a sum of squares in `R`. The proofs follow directly from the definition of the function `sum_of_squares`.
 -/
 
-lemma zero_is_sum_of_squares : is_sum_of_squares 0 
-  := by 
-    use [0] 
+lemma zero_is_sum_of_squares : is_sum_of_squares 0
+  := by
+    use [0]
     rfl
     done
 
-lemma one_is_sum_of_squares : is_sum_of_squares 1 
+lemma one_is_sum_of_squares : is_sum_of_squares 1
   := by
     use [1]
     rfl
     done
 
-lemma squares_are_sums_of_squares  {R : Type} [Semiring R] (x : R) : is_sum_of_squares (x ^ 2) 
-  := by 
+lemma squares_are_sums_of_squares  {R : Type} [Semiring R] (x : R) : is_sum_of_squares (x ^ 2)
+  := by
     use [x]
     simp [sum_of_squares]
     done
@@ -257,35 +276,35 @@ lemma squares_are_sums_of_squares  {R : Type} [Semiring R] (x : R) : is_sum_of_s
 Next, we prove that if `S1` and `S2` are sums of squares in `R`, then of is `S1 + S2`. And if `R` is commutative, then so is `S1 * S2`.
 -/
 
-theorem sum_of_squares_from_sum {R : Type} [Semiring R] {S1 S2 : R} (h1 : is_sum_of_squares S1) (h2 : is_sum_of_squares S2) : is_sum_of_squares (S1 + S2) 
+theorem sum_of_squares_from_sum {R : Type} [Semiring R] {S1 S2 : R} (h1 : is_sum_of_squares S1) (h2 : is_sum_of_squares S2) : is_sum_of_squares (S1 + S2)
   := by
-    rcases h1 with ⟨L1, h1⟩ 
-    rcases h2 with ⟨L2, h2⟩ 
-    use (L1 ++ L2) 
-    simp [sum_of_squares_concat] 
-    rw [h1, h2] 
+    rcases h1 with ⟨L1, h1⟩
+    rcases h2 with ⟨L2, h2⟩
+    use (L1 ++ L2)
+    simp [sum_of_squares_concat]
+    rw [h1, h2]
     done
 
--- TO COMPLETE... 
+-- TO COMPLETE...
 
 def boxmul {R : Type} [Semiring R] (L1 L2 : List R) : List R := List.map (fun ((a, b) : R × R) => a * b) (List.product L1 L2)
 
-theorem boxmul_cons {R : Type} [Semiring R] (a : R) (L1 L2 : List R) : 
+theorem boxmul_cons {R : Type} [Semiring R] (a : R) (L1 L2 : List R) :
 boxmul (a :: L1) L2 = L2.map (a * .) ++ boxmul L1 L2
   := by
     simp [boxmul, List.product, List.product_cons]
     have aux : (fun x => x.fst * x.snd) ∘ Prod.mk a = (fun x => a * x) := by simp [Function.funext_iff]
-    rw [aux] 
+    rw [aux]
     done
 
-theorem boxmul_sum {R : Type} [Semiring R] (L1 L2 : List R) : List.sum (boxmul L1 L2) = (List.sum L1) * (List.sum L2) 
+theorem boxmul_sum {R : Type} [Semiring R] (L1 L2 : List R) : List.sum (boxmul L1 L2) = (List.sum L1) * (List.sum L2)
   := by
     induction L1 with
     | nil => simp [List.nil_product] ; have aux : boxmul [] L2 = [] := by {simp [boxmul]} ; rw [aux] ; rfl
-    | cons a l ih => simp [boxmul_cons, mul_sum, add_mul, ih] 
+    | cons a l ih => simp [boxmul_cons, mul_sum, add_mul, ih]
     done
 
--- NOTE THAT `boxmul` BEHAVES DISTRIBUTIVELY 
+-- NOTE THAT `boxmul` BEHAVES DISTRIBUTIVELY
 
 #eval List.product [1,2] [1, 2, 3]
 #eval boxmul [1,2] [1, 2, 3]
@@ -293,7 +312,7 @@ theorem boxmul_sum {R : Type} [Semiring R] (L1 L2 : List R) : List.sum (boxmul L
 
 -- [MulHomClass F R S] (f : F)
 
-lemma listproduct_map {R S : Type} (L1 L2 : List R) (f : R → S) : (List.product L1 L2).map (fun (x : R × R) => Prod.mk (f x.fst) (f x.snd)) = List.product (L1.map f) (L2.map f) 
+lemma listproduct_map {R S : Type} (L1 L2 : List R) (f : R → S) : (List.product L1 L2).map (fun (x : R × R) => Prod.mk (f x.fst) (f x.snd)) = List.product (L1.map f) (L2.map f)
   := by
     simp [List.product]
     simp [List.bind]
@@ -306,14 +325,14 @@ theorem boxmul_map {R S : Type} [Semiring R] [Semiring S] (L1 L2 : List R) (f : 
   := by
     induction L1 with
     | nil => simp [boxmul]
-    | cons a l ih => 
+    | cons a l ih =>
     simp [boxmul]--, Function.funext_iff, MulHomClass.map_mul]
-    have aux : ↑f ∘ (fun (x : R × R) => x.fst * x.snd) = fun (x : R × R) => (f x.fst) * (f x.snd) 
+    have aux : ↑f ∘ (fun (x : R × R) => x.fst * x.snd) = fun (x : R × R) => (f x.fst) * (f x.snd)
       := by
         -- simp [Function.funext_iff, hf]
         ext x
         apply hf
-        -- exact hf x.fst x.snd 
+        -- exact hf x.fst x.snd
         -- -- simp [Function.funext_iff, MulHomClass.map_mul]
         done
     -- simp [aux]
@@ -330,18 +349,18 @@ theorem boxmul_map {R S : Type} [Semiring R] [Semiring S] (L1 L2 : List R) (f : 
 
 -- boxmul should commute to functions...
 
-theorem sum_of_squares_from_mul {R : Type} [Semiring R] {S1 S2 : R} (h1 : is_sum_of_squares S1) (h2 : is_sum_of_squares S2) : is_sum_of_squares (S1 * S2) 
+theorem sum_of_squares_from_mul {R : Type} [Semiring R] {S1 S2 : R} (h1 : is_sum_of_squares S1) (h2 : is_sum_of_squares S2) : is_sum_of_squares (S1 * S2)
   := by
     rcases h1 with ⟨L1, h1⟩
     rcases h2 with ⟨L2, h2⟩
-    -- have h1' : S1 = (L1.map (. ^ 2)).sum 
-    --   := by 
+    -- have h1' : S1 = (L1.map (. ^ 2)).sum
+    --   := by
     --     rw [squaring_and_summing, h1]
     --     done
-    -- have h2' : S2 = (L2.map (. ^ 2)).sum 
-    --   := by 
+    -- have h2' : S2 = (L2.map (. ^ 2)).sum
+    --   := by
     --     rw [squaring_and_summing, h2]
-    --     done 
+    --     done
     simp [is_sum_of_squares]
     use boxmul L1 L2
     rw [← squaring_and_summing]
@@ -359,56 +378,56 @@ inductive ind_sum_of_squares [Semiring R] : R → Prop :=
     | add (a S : R) (hS : ind_sum_of_squares S) : ind_sum_of_squares (a ^ 2 + S)
 
 lemma ind_zero_is_sum_of_squares : ind_sum_of_squares 0
-  := by 
+  := by
     exact ind_sum_of_squares.zero
     done
 
-lemma ind_one_is_sum_of_squares : ind_sum_of_squares 1 
+lemma ind_one_is_sum_of_squares : ind_sum_of_squares 1
   := by
     have aux : 1 = (1 ^ 2 + 0) := by rfl
     rw [aux]
     exact ind_sum_of_squares.add 1 0 ind_sum_of_squares.zero
     done
 
-lemma ind_squares_are_sums_of_squares  {R : Type} [Semiring R] (x : R) : ind_sum_of_squares (x ^ 2) 
+lemma ind_squares_are_sums_of_squares  {R : Type} [Semiring R] (x : R) : ind_sum_of_squares (x ^ 2)
   := by
     rw [← add_zero (x ^2)]
-    exact ind_sum_of_squares.add x 0 ind_sum_of_squares.zero 
+    exact ind_sum_of_squares.add x 0 ind_sum_of_squares.zero
     done
 
-theorem ind_sum_of_squares_from_sum {R : Type} [Semiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 + S2) 
+theorem ind_sum_of_squares_from_sum {R : Type} [Semiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 + S2)
   := by
     induction h1 with
-      | zero => 
+      | zero =>
         simp
         exact h2
-      | add a S hS ih => 
+      | add a S hS ih =>
         rw [add_assoc]
-        exact ind_sum_of_squares.add a (S + S2) ih 
+        exact ind_sum_of_squares.add a (S + S2) ih
     done
 
 lemma ind_mul_by_sq_sum_of_squares {R : Type} [CommSemiring R] {S : R} (h : ind_sum_of_squares S) (x : R) : ind_sum_of_squares (x ^2 * S)
   := by
     induction h with
-    | zero => 
+    | zero =>
     rw [mul_zero]
     exact ind_sum_of_squares.zero
-    |add a s _ ih => 
+    |add a s _ ih =>
     rw [mul_add, ← mul_pow x a 2]
     exact ind_sum_of_squares.add (x * a) (x ^ 2 * s) ih
     done
 
-theorem ind_sum_of_squares_from_mul {R : Type} [CommSemiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 * S2) 
+theorem ind_sum_of_squares_from_mul {R : Type} [CommSemiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 * S2)
   := by
     induction h1 with
-    | zero => 
+    | zero =>
       rw [zero_mul]
-      exact ind_sum_of_squares.zero 
-    | add a S hS ih => 
+      exact ind_sum_of_squares.zero
+    | add a S hS ih =>
       rw [add_mul]
       apply ind_sum_of_squares_from_sum _ _
       · exact ind_mul_by_sq_sum_of_squares h2 _
-      · exact ih 
+      · exact ih
     done
 
 /-!
@@ -417,11 +436,11 @@ The inductive definition is very convenient in order to write proofs of certain 
 Now we want to check that the [inductive definition](#being-a-sum-of-squares-inductive) coincides with the [existential definition](#being-a-sum-of-squares-existential).
 -/
 
-lemma exist_to_ind {R : Type} [Semiring R] (S : R) (H : is_sum_of_squares S) : ind_sum_of_squares S 
+lemma exist_to_ind {R : Type} [Semiring R] (S : R) (H : is_sum_of_squares S) : ind_sum_of_squares S
   := by
     rcases H with ⟨L, hL⟩
     induction L generalizing S with
-    | nil => 
+    | nil =>
       simp [sum_of_squares] at hL
       rw [← hL]
       exact ind_sum_of_squares.zero
@@ -429,80 +448,80 @@ lemma exist_to_ind {R : Type} [Semiring R] (S : R) (H : is_sum_of_squares S) : i
       rw [← hL]
       simp [sum_of_squares]
       specialize ih (sum_of_squares L) (Eq.refl (sum_of_squares L))
-      exact ind_sum_of_squares.add a (sum_of_squares L) ih 
+      exact ind_sum_of_squares.add a (sum_of_squares L) ih
     done
 
-lemma ind_to_exist {R : Type} [Semiring R] (S : R) (H : ind_sum_of_squares S) : is_sum_of_squares S 
+lemma ind_to_exist {R : Type} [Semiring R] (S : R) (H : ind_sum_of_squares S) : is_sum_of_squares S
   := by
     simp [is_sum_of_squares]
     induction H with
-    | zero => 
-      use [] 
+    | zero =>
+      use []
       rfl
-    | add a S' _ ih => 
-      rcases ih with ⟨L', hL'⟩ 
+    | add a S' _ ih =>
+      rcases ih with ⟨L', hL'⟩
       rw [← hL']
       use (a :: L')
-      rfl 
+      rfl
     done
 
-theorem equiv_defs {R : Type} [Semiring R] (S : R) : is_sum_of_squares S ↔ ind_sum_of_squares S 
+theorem equiv_defs {R : Type} [Semiring R] (S : R) : is_sum_of_squares S ↔ ind_sum_of_squares S
   := by
     constructor
-    · apply exist_to_ind 
-    · apply ind_to_exist 
+    · apply exist_to_ind
+    · apply ind_to_exist
     done
 
 /-!
 ## *Golfed versions of the proofs*
 -/
 
-theorem squaring_and_summing_golfed {R : Type} [Semiring R] 
+theorem squaring_and_summing_golfed {R : Type} [Semiring R]
   (L : List R) : (L.map (. ^ 2)).sum = sum_of_squares L
     := by induction L with
       | nil => rfl
       | cons a L ih => simp [sum_of_squares, ih]
 
 @[simp]
-theorem sum_of_squares_concat_golfed {R : Type} [Semiring R] 
-  (L1 L2 : List R) : sum_of_squares (L1 ++ L2) = sum_of_squares L1 + sum_of_squares L2 
+theorem sum_of_squares_concat_golfed {R : Type} [Semiring R]
+  (L1 L2 : List R) : sum_of_squares (L1 ++ L2) = sum_of_squares L1 + sum_of_squares L2
     := by induction L1 with
       | nil => simp [sum_of_squares]
       | cons _ _ ih => simp [sum_of_squares, ih, add_assoc]
 
 @[simp]
-theorem sum_of_squares_permut_golfed {R : Type} [Semiring R] {L1 L2 : List R} 
-  (H : L1 ~ L2) : sum_of_squares L1 = sum_of_squares L2 
+theorem sum_of_squares_permut_golfed {R : Type} [Semiring R] {L1 L2 : List R}
+  (H : L1 ~ L2) : sum_of_squares L1 = sum_of_squares L2
     := by induction H with
       | nil => rfl
       | cons _ _ Sum12 => simp [sum_of_squares, Sum12]
       | swap x y _ => simp [sum_of_squares, ← add_assoc, ← add_assoc, add_comm (y  ^ 2) (x ^ 2)]
       | trans _ _ Sum1 Sum2 => rw [Sum1, Sum2]
-  
+
 @[simp]
-theorem sum_of_squares_erase_golfed {R : Type} [Semiring R] [DecidableEq R] (L : List R) (a : R) (h : a ∈ L) : 
-  sum_of_squares L = a ^ 2 + sum_of_squares (L.erase a) 
+theorem sum_of_squares_erase_golfed {R : Type} [Semiring R] [DecidableEq R] (L : List R) (a : R) (h : a ∈ L) :
+  sum_of_squares L = a ^ 2 + sum_of_squares (L.erase a)
     := by rw [sum_of_squares_permut_golfed (L.perm_cons_erase h), sum_of_squares]
 
 @[simp]
-theorem sum_of_squares_of_list_mul_golfed {R : Type} [CommSemiring R] 
+theorem sum_of_squares_of_list_mul_golfed {R : Type} [CommSemiring R]
   (L : List R) (c : R) : sum_of_squares (L.map (c * .)) = c ^ 2 * sum_of_squares L
     := by induction L with
       | nil => simp [sum_of_squares]
       | cons a _ ih => simp [sum_of_squares, ih, mul_add, mul_pow c a 2]
 
 @[simp]
-theorem sum_of_squares_of_list_div_golfed {F : Type} [Semifield F] 
-  (L : List F) (c : F) : sum_of_squares (L.map (. / c)) = (1 / c ^ 2) * sum_of_squares L 
+theorem sum_of_squares_of_list_div_golfed {F : Type} [Semifield F]
+  (L : List F) (c : F) : sum_of_squares (L.map (. / c)) = (1 / c ^ 2) * sum_of_squares L
     := by simp [div_eq_mul_inv, mul_comm _ c⁻¹]
 
 @[simp]
-theorem ind_sum_of_squares_from_sum_golfed {R : Type} [Semiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 + S2) 
+theorem ind_sum_of_squares_from_sum_golfed {R : Type} [Semiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 + S2)
   := by
     induction h1 with
       | zero => simp [zero_add, h2]
       | add a S _ h2 => simp [add_assoc, ind_sum_of_squares.add a (S + S2) h2]
-    
+
 @[simp]
 theorem ind_mul_by_sq_sum_of_squares_golfed {R : Type} [CommSemiring R] {S : R} (h : ind_sum_of_squares S) (x : R) : ind_sum_of_squares (x ^2 * S)
   := by
@@ -511,7 +530,7 @@ theorem ind_mul_by_sq_sum_of_squares_golfed {R : Type} [CommSemiring R] {S : R} 
     | add a s _ h => simp [mul_add, ← mul_pow x a 2, ind_sum_of_squares.add (x * a) (x ^ 2 * s) h]
 
 @[simp]
-theorem ind_sum_of_squares_from_mul_golfed {R : Type} [CommSemiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 * S2) 
+theorem ind_sum_of_squares_from_mul_golfed {R : Type} [CommSemiring R] {S1 S2 : R} (h1 : ind_sum_of_squares S1) (h2 : ind_sum_of_squares S2) : ind_sum_of_squares (S1 * S2)
   := by
     induction h1 with
     | zero => simp [zero_mul, ind_sum_of_squares.zero]
@@ -550,7 +569,7 @@ for fields, the two are equivalent
 
 the characteristic of a (semi?)real ring is 0
 
-NEXT FILE: 
+NEXT FILE:
 
 in **rings**: def of precones, cones, examples, support of a cone , prime cone (compare all of this to positive cone in mathlib, see Leiden pdf again)
 
