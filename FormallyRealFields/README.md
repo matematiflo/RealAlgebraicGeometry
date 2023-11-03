@@ -2,5 +2,5 @@
 
 ## Sums of squares
 
-1. [Definitions and examples](SumOfSquares/SumSq.md)
-2. [Basic properties](SumsOfSquares/SumSqProp.lean)
+1. [Definitions and examples](SumsOfSquares/SumSq.md)
+2. [Basic properties](SumsOfSquares/SumSqProp.md)
