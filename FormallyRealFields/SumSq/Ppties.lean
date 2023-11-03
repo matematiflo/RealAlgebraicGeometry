@@ -6,7 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Florent Schaffhauser
 -/
 
-import «FormallyRealFields».SumsOfSquares.SumSq
+import «FormallyRealFields».SumSq.Defs
 import Mathlib.Data.List.Perm
 
 /-!
