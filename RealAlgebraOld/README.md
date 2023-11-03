@@ -1,4 +1,4 @@
-# Real algebra
+# Formally real fields
 
 ## Sums of squares
 

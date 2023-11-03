@@ -1,1 +1,4 @@
 /WorkInProgress
+/build
+/lakefile.olean
+/lake-packages/*
