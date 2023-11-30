@@ -1,4 +1,4 @@
 /_Ignore
 /build
 /lakefile.olean
-/lake-packages/*
+/.lake
